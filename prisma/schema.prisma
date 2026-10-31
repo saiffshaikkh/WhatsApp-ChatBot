@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id            String               @id @default(uuid()) @db.Uuid
+  whatsappId    String               @unique @db.VarChar(20)
+  createdAt     DateTime             @default(now()) @db.Timestamptz(3)
+  conversations Conversation[]
+  preferences   CustomerPreference[]
+}
+
+model Conversation {
+  id             String               @id @default(uuid()) @db.Uuid
+  customerId     String               @db.Uuid
+  contextVersion Int                  @default(0)
+  createdAt      DateTime             @default(now()) @db.Timestamptz(3)
+  customer       Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  summary        ConversationSummary?
+
+  @@unique([id, customerId])
+  @@index([customerId, createdAt])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  customerId     String       @db.Uuid
+  conversationId String       @db.Uuid
+  role           MessageRole
+  content        String       @db.VarChar(8000)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  conversation   Conversation @relation(fields: [conversationId, customerId], references: [id, customerId], onDelete: Cascade)
+
+  @@index([customerId, conversationId, createdAt, id])
+}
+
+model CustomerPreference {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @db.Uuid
+  key         String   @db.VarChar(64)
+  value       String   @db.VarChar(1000)
+  consentedAt DateTime @db.Timestamptz(3)
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, key])
+}
+
+model ConversationSummary {
+  id             String       @id @default(uuid()) @db.Uuid
+  customerId     String       @db.Uuid
+  conversationId String       @db.Uuid
+  content        String       @db.VarChar(8000)
+  sourceVersion  Int
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  conversation   Conversation @relation(fields: [conversationId, customerId], references: [id, customerId], onDelete: Cascade)
+
+  @@unique([conversationId, customerId])
+}
