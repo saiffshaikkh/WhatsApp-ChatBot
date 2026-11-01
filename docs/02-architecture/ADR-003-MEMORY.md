@@ -34,7 +34,7 @@ deletion. Do not treat a WhatsApp identity as authorization for private CFS data
 
 - Customer has a unique WhatsApp identity and UUID. `resolveCustomer` is an internal
   resolver for an already verified transport identity, not authentication or an API
-  that customers can call to choose another identity. No WhatsApp transport exists.
+  that customers can call to choose another identity. Stage 5 now supplies authenticated WhatsApp transport context; see ADR-006.
 - A repository/service instance binds to one trusted customer UUID. Never derive
   this scope from an untrusted request body or model output. Customer lookup returns
   only the bound customer; conversation lookup includes both conversation and owner.

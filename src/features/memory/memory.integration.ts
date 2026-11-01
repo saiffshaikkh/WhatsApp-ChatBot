@@ -53,10 +53,15 @@ beforeAll(async () => {
     throw new Error('Unsafe test schema');
   await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
   created = true;
-  const sql = readFileSync(
-    'prisma/migrations/20261031000000_memory/migration.sql',
-    'utf8',
-  ).replace(/CREATE SCHEMA IF NOT EXISTS "public";/, '');
+  const sql =
+    readFileSync(
+      'prisma/migrations/20261031000000_memory/migration.sql',
+      'utf8',
+    ).replace(/CREATE SCHEMA IF NOT EXISTS "public";/, '') +
+    readFileSync(
+      'prisma/migrations/20261101000000_whatsapp/migration.sql',
+      'utf8',
+    );
   await admin.$transaction(
     async (tx) => {
       await tx.$executeRawUnsafe(`SET LOCAL search_path TO "${schema}"`);

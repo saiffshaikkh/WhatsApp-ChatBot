@@ -64,33 +64,72 @@ when being concise. These style rules apply throughout every project stage.
 
 ## Current stage
 
-Stage 4 customer-scoped durable memory and temporary Upstash context are complete.
-20 local tests and 8 live integration tests passed. The additive memory migration
-is deployed to authorized Neon. Stop here; no later stage is authorized.
+Stage 6 EcommerceProvider abstraction is complete within its authorized internal contract/model/mock scope.
+It is independent of unfinished Stage 5 work: implement only product read contracts,
+Zod-normalized Product/ProductVariant/InventoryStatus models and a deterministic
+MockEcommerceProvider. Stage 2 supports public product evidence, not a documented
+commerce API, unrestricted search/collection or private order access. No live CFS
+adapter, ingestion, AI integration, order capabilities/models, cart or checkout is
+in scope. Stop after Stage 6; no subsequent stage is authorized.
+
+Stage 5 remains paused at the owner's request. Its code/local-service verification
+is complete, but main-database migration, Meta configuration/setup, current-contract
+review and live WhatsApp verification remain pending. WhatsApp stays disabled.
+The temporary dependency gate below remains active until Stage 5 is fully complete.
+
+## Temporary Stage 5 dependency gate
+
+This temporary rule applies while Stage 5 remains paused or incompletely verified.
+Before implementing any newly requested stage:
+
+1. Read its requested scope and relevant documentation/code. Tell the user whether
+   that work depends on unfinished Stage 5 work, naming the specific dependency.
+2. If independent, start the explicitly authorized stage after stating that finding.
+   Stage 5's pending live verification alone must not block independent work.
+3. If dependent, discuss the concrete limitations, blocked work and any independently
+   testable subset with the user before starting implementation. Do not silently
+   narrow scope or treat mocks as proof of live WhatsApp behavior. Proceed only with
+   the scope resolved in that discussion.
+4. Keep Stage 5 paused and its remaining migration, configuration, Meta setup and
+   live verification work accurately recorded. Starting another stage does not
+   complete Stage 5 or automatically authorize unrelated stages or capabilities.
+5. When Stage 5 is fully complete, remove this entire temporary section and its
+   temporary notices in README.md and docs/00-project/ROADMAP.md in the same handoff
+   update. Completion requires the authorized target migration, complete valid
+   configuration, Meta webhook/subscription setup, current API contract review and
+   successful real send/receive verification, with required checks passing and
+   failures resolved. Credentials alone or mocked tests do not satisfy completion.
+   Preserve the factual verification history and permanent engineering rules;
+   update resolved blocker/status text rather than retaining stale pending claims.
+   The owner's separate Docker daemon deferral remains unchanged.
 
 ## Agent handoff snapshot
 
-Last updated: 2026-10-31. This snapshot records observed results, not a substitute
+Last updated: 2026-11-01. This snapshot records observed results, not a substitute
 for inspecting current files or running fresh verification after code changes.
 
-| Stage                           | Recorded state                                                                                         |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 0: Documentation                | Completed: project foundation, engineering rules and five ADRs                                         |
-| 1: Requirements                 | Completed: eight PRDs in docs/01-requirements/                                                         |
-| 2: Public website investigation | Completed: evidence register, capability classifications, limits and blockers                          |
-| 3: Backend foundation           | Completed: local and live-service verification passed; Docker daemon checks deferred                   |
-| 4: Durable memory               | Completed: five models, scoped repositories/services, versioned Redis context and live isolation tests |
-| Later stages                    | Not implemented or authorized by this snapshot                                                         |
+| Stage                           | Recorded state                                                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 0: Documentation                | Completed: project foundation, engineering rules and five ADRs                                                                    |
+| 1: Requirements                 | Completed: eight PRDs in docs/01-requirements/                                                                                    |
+| 2: Public website investigation | Completed: evidence register, capability classifications, limits and blockers                                                     |
+| 3: Backend foundation           | Completed: local and live-service verification passed; Docker daemon checks deferred                                              |
+| 4: Durable memory               | Completed: five models, scoped repositories/services, versioned Redis context and live isolation tests                            |
+| 5: WhatsApp                     | Implemented: signed webhooks, scoped persistence, durable idempotency/replies, client and worker; live Meta checks pending        |
+| 6: Ecommerce abstraction        | Completed: product read interface, validated product/variant/stock models and deterministic mock; no live adapter or order access |
+| Later stages                    | Not implemented or authorized by this snapshot                                                                                    |
 
 ### Existing code and responsibilities
 
 - `src/app.ts`: creates Express without opening a listener.
 - `src/server.ts`: validates environment, creates connections and manages process signals.
 - `src/features/health/`: GET /health, GET /ready and local HTTP integration tests.
-- `src/features/memory/`: scoped repository/service, temporary context and isolation tests.
+- `src/features/memory/`: scoped repository/service, reusable identity/message helpers, temporary context and isolation tests.
+- `src/features/whatsapp/`: config, signatures, schemas/normalization, thin routes, conversation resolution, durable repository, workflow/client/worker and tests.
+- `src/features/ecommerce/`: EcommerceProvider, normalized models/observed URL checks, MockEcommerceProvider and unit contract tests. Not wired into HTTP, WhatsApp or AI.
 - `src/shared/`: Zod config, Prisma/Upstash connections, safe JSON logging,
   centralized errors, startup/shutdown and tests.
-- `prisma/schema.prisma`: Customer, Conversation, Message, CustomerPreference and ConversationSummary models.
+- `prisma/schema.prisma`: five memory models plus WhatsAppDelivery and a nullable conversation receiver channel. The Stage 5 additive migration is tested but not deployed to the main database.
 - `prisma.config.ts`: direct CLI datasource; runtime uses PrismaPg with DATABASE_URL.
 - `src/generated/prisma/` and `dist/`: ignored generated outputs, never hand-edit them.
 - `Dockerfile` and `compose.yaml`: app container only, external Neon/Upstash resources.
@@ -112,7 +151,7 @@ values were printed or added to tracked files. Earlier blocked attempts are reso
 Docker daemon build/run checks are explicitly deferred by the user. Do not silently
 turn this deferral into a passed check or resume Docker checks without new instructions.
 
-No AI, WhatsApp, ecommerce, RAG, order, cart or checkout business feature is implemented.
+WhatsApp has deterministic placeholder replies only. Ecommerce has internal read contracts and a mock only. No live product search/catalogue adapter, AI, RAG, order, cart or checkout feature is implemented.
 Do not assume the documented AIProvider classes exist in code yet.
 
 ### Stage 4 verification record
@@ -123,13 +162,79 @@ TypeScript, ESLint, Prettier, build and Prisma schema validation passed. The rev
 resetting existing data. Tests used isolated synthetic schemas and scoped Upstash
 keys, cleaned up after completion. Earlier fixture timeout and transaction wait
 failures were diagnosed, fixed and re-tested; no known verification failure remains.
-Memory code is internal, with no HTTP/WhatsApp/AI integration or RAG implementation.
+At Stage 4, memory was internal without transport integration. Stage 5 now connects authenticated WhatsApp messages; AI and RAG remain unimplemented.
 See ADR-003 for trusted scope, preference consent, cache TTL/versioning and limits.
+
+### Stage 5 verification record
+
+On 2026-11-01, 47 local tests and all 18 service integration tests passed. WhatsApp
+service tests used isolated synthetic Neon schemas and a mocked outgoing client;
+they are not live Meta delivery tests. TypeScript, ESLint, Prettier, Prisma
+generation/schema validation and build passed. Early type/lint/format issues were
+fixed and rechecked; no known local/service verification failure remains. A compiled smoke check with live Neon/Upstash returned 200 from /health and /ready, and 404 from the disabled WhatsApp route.
+
+Unique receiver/message IDs, transactional incoming/reply persistence, existing
+customer/conversation reuse, concurrent claims, restart recovery, scoped isolation,
+429 retry limits, timeout uncertainty and HTTP-to-workflow behavior were verified.
+The additive 20261101000000_whatsapp migration was applied only to isolated test
+schemas, which were cleaned up. It has not been deployed to the main database.
+No Meta credentials were added and no real WhatsApp messages were sent.
+
+WhatsApp defaults to disabled. Enable only after migration, complete credentials,
+Meta subscription setup and applicable privacy gates. Uncertain sends are not
+blindly retried; API acceptance is not confirmed delivery. See
+[WhatsApp integration](docs/03-integrations/WHATSAPP-INTEGRATION.md) and
+[ADR-006](docs/02-architecture/ADR-006-WHATSAPP-PROCESSING.md). Official Meta webhook
+document retrieval returned 429; full current-contract/live compatibility review
+remains pending. Docker daemon checks remain deferred.
+
+### Stage 6 verification record
+
+On 2026-11-01, all 38 ecommerce unit tests and the full 85-test local suite passed.
+TypeScript checking, ESLint, Prettier, Prisma generation and production build passed.
+Tests cover the provider interface, malformed/missing fields, distinct identifiers,
+variant isolation, unknown stock, exact observed URL membership, unsafe URL rejection,
+mock behavior and absence of network access. Early URL handling and optional-property
+typing failures were fixed and all affected checks rerun without weakening assertions.
+
+The product boundary returns normalized data only, preserving application-owned
+source observations and separate identifier namespaces. Stock is public wording,
+not a live warehouse claim. Stage 2 did not establish legitimate order access, so
+no order methods/models exist. No live CFS adapter, ingestion, database migration,
+provider credentials, AI or WhatsApp wiring was added by Stage 6.
+
+Live ecommerce integration is not implemented or claimed. Service integration tests
+were not rerun in Stage 6 because this pure module changes no database/cache/transport
+behavior; the 18 service-test passes above remain the Stage 5 historical record.
+No fresh CFS observations were collected. Collection/reuse, freshness, identity
+mapping and a reviewed live source remain gates for a separately authorized adapter.
+See [the provider contract](docs/03-integrations/ECOMMERCE-PROVIDER.md) and ADR-004.
+Stage 5 remains paused and the temporary dependency gate is preserved. Docker daemon
+checks remain deferred. Stop here; no subsequent stage is authorized.
+
+### Future CFS MySQL source handoff
+
+The owner reports CFS uses MySQL, but hosting, version, schema, permissions and
+connectivity are unverified. The intended future flow is application workflow ->
+EcommerceProvider -> authorized read-only CFS MySQL adapter -> parameterized queries
+-> Zod-normalized results. Neon remains the application database. No credentials,
+connection attempt, connector implementation or new stage is authorized yet.
+
+Read [the MySQL access/resume handoff](docs/03-integrations/CFS-MYSQL-ACCESS-HANDOFF.md)
+before resuming this work. It preserves the senior request, required connection and
+network/TLS details, approved product-only permissions, proposed variable names,
+schema/business mapping and test/wiring sequence. The fixed-stack MySQL prohibition
+requires an explicit external-source exception before adding a connector. Current
+public_website/mock provenance must not be misused to label future database results.
+Do not ask the owner to repeat this flow; ask only for missing access, authorization
+or mapping details when work is explicitly resumed. Stage 5 stays paused.
+
+This update is documentation only. Formatting, local links and policy consistency
+were checked; no runtime/database checks or code changes were performed.
 
 ### Next permitted work
 
-Wait for the next explicit user instruction. Do not add transports, AI tools or
-public memory endpoints. Real customer use still requires agreed privacy/retention
+Stage 6 is complete. Wait for the next explicit stage instruction and apply the temporary Stage 5 dependency gate before implementation. Stage 5 remains paused; its activation needs the authorized migration target, Meta credentials/setup and live verification. No subsequent stage is authorized. Real customer use still requires agreed privacy/retention
 and identity lifecycle policies. Docker daemon checks remain explicitly deferred.
 
 Useful commands: `npm test`, `npm run typecheck`, `npm run lint`,

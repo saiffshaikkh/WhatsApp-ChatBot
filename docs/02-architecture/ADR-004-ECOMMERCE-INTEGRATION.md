@@ -1,7 +1,7 @@
 # ADR-004: Public evidence and explicit ecommerce access
 
 Status: Accepted for future implementation. Date: 2026-10-31.
-Updated after Stage 2 public website investigation; no integration implemented.
+Updated after Stage 2 investigation and Stage 6 abstraction authorization. No live integration is implemented.
 
 ## Context
 
@@ -53,3 +53,24 @@ or create real purchases/orders during investigation.
 A later explicitly supplied authorized API/feed requires contract review,
 application authorization and relevant tests before use. Stage 2 stops at evidence
 and documentation; no adapter, schema, ingestion job or application feature is authorized.
+
+## Stage 6 abstraction decision
+
+The user authorized a read-only EcommerceProvider interface, Product/ProductVariant/
+InventoryStatus models and MockEcommerceProvider. This does not depend on live
+WhatsApp activation. Contracts cover search over permitted application-owned
+evidence, product lookup and public availability observations, not live stock.
+Stage 6 implements only the deterministic mock, with no HTTP adapter or ingestion.
+No order methods/models are added because Stage 2 did not establish order access.
+
+Normalize adapter-projected unknown data with Zod, strip unmodeled fields and
+preserve missing facts, separate SKU namespaces, variant scope and observed times.
+Product/image URLs must pass both the Stage 2 source-host policy and exact membership
+in application-owned observed URL sets. Valid host syntax alone is not provenance.
+Never let AI/user input supply evidence metadata. Return source URLs unchanged;
+reject links requiring rewriting. Source metadata comes from an authorized adapter,
+which still needs to establish freshness, field agreement, permissions and access.
+
+Mark mock observations explicitly and never wire them as a silent runtime fallback.
+No AI website access, cart, checkout or private customer order capability is added.
+See the [Stage 6 contract and limits](../03-integrations/ECOMMERCE-PROVIDER.md).

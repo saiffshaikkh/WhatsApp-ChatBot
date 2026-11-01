@@ -16,16 +16,48 @@ model Customer {
 }
 
 model Conversation {
-  id             String               @id @default(uuid()) @db.Uuid
-  customerId     String               @db.Uuid
-  contextVersion Int                  @default(0)
-  createdAt      DateTime             @default(now()) @db.Timestamptz(3)
-  customer       Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  messages       Message[]
-  summary        ConversationSummary?
+  id                    String               @id @default(uuid()) @db.Uuid
+  customerId            String               @db.Uuid
+  contextVersion        Int                  @default(0)
+  createdAt             DateTime             @default(now()) @db.Timestamptz(3)
+  customer              Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  messages              Message[]
+  summary               ConversationSummary?
+  whatsappPhoneNumberId String?              @db.VarChar(32)
+  whatsappDeliveries    WhatsAppDelivery[]
 
   @@unique([id, customerId])
+  @@unique([customerId, whatsappPhoneNumberId])
   @@index([customerId, createdAt])
+}
+
+enum WhatsAppDeliveryStatus {
+  PENDING
+  SENDING
+  ACCEPTED
+  FAILED
+  UNCERTAIN
+  EXPIRED
+}
+
+model WhatsAppDelivery {
+  id                String                 @id @default(uuid()) @db.Uuid
+  phoneNumberId     String                 @db.VarChar(32)
+  messageId         String                 @db.VarChar(256)
+  customerId        String                 @db.Uuid
+  conversationId    String                 @db.Uuid
+  sentAt            DateTime               @db.Timestamptz(3)
+  reply             String                 @db.VarChar(4096)
+  status            WhatsAppDeliveryStatus @default(PENDING)
+  attempts          Int                    @default(0)
+  nextAttemptAt     DateTime               @default(now()) @db.Timestamptz(3)
+  claimedAt         DateTime?              @db.Timestamptz(3)
+  outgoingMessageId String?                @db.VarChar(256)
+  createdAt         DateTime               @default(now()) @db.Timestamptz(3)
+  conversation      Conversation           @relation(fields: [conversationId, customerId], references: [id, customerId], onDelete: Cascade)
+
+  @@unique([phoneNumberId, messageId])
+  @@index([phoneNumberId, status, nextAttemptAt])
 }
 
 enum MessageRole {

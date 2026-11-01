@@ -1,18 +1,35 @@
 import type {
   PrismaClient,
   MessageRole,
+  Prisma,
 } from '../../generated/prisma/client.js';
 import { idSchema, whatsappIdSchema } from './schemas.js';
 // This resolver is for verified transport identity only, never a customer-supplied lookup key.
 export async function resolveCustomer(
-  db: PrismaClient,
+  db: Pick<PrismaClient, 'customer'>,
   verifiedWhatsappId: string,
 ) {
   const whatsappId = whatsappIdSchema.parse(verifiedWhatsappId);
   return db.customer.upsert({
     where: { whatsappId },
     create: { whatsappId },
-    update: {},
+    update: { whatsappId },
+  });
+}
+export async function persistMessage(
+  tx: Prisma.TransactionClient,
+  customerId: string,
+  conversationId: string,
+  role: MessageRole,
+  content: string,
+) {
+  const result = await tx.conversation.updateMany({
+    where: { id: conversationId, customerId },
+    data: { contextVersion: { increment: 1 } },
+  });
+  if (result.count !== 1) throw new Error('Conversation unavailable');
+  return tx.message.create({
+    data: { customerId, conversationId, role, content },
   });
 }
 export function createMemoryRepository(
@@ -40,16 +57,7 @@ export function createMemoryRepository(
       content: string,
     ) {
       return db.$transaction(
-        async (tx) => {
-          const result = await tx.conversation.updateMany({
-            where: { id: conversationId, customerId },
-            data: { contextVersion: { increment: 1 } },
-          });
-          if (result.count !== 1) throw new Error('Conversation unavailable');
-          return tx.message.create({
-            data: { customerId, conversationId, role, content },
-          });
-        },
+        (tx) => persistMessage(tx, customerId, conversationId, role, content),
         { maxWait: 5000, timeout: 5000 },
       );
     },

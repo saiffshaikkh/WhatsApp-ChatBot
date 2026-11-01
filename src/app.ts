@@ -3,7 +3,15 @@ import express from 'express';
 import { healthRouter, type Readiness } from './features/health/health.js';
 import { errorHandler } from './shared/errors.js';
 import type { Logger } from './shared/logger.js';
-export function createApp(readiness: Readiness, log: Logger) {
+import {
+  whatsappRouter,
+  type WhatsAppTransport,
+} from './features/whatsapp/routes.js';
+export function createApp(
+  readiness: Readiness,
+  log: Logger,
+  whatsapp?: WhatsAppTransport,
+) {
   const app = express();
   app.disable('x-powered-by');
   app.use((_req, res, next) => {
@@ -22,6 +30,7 @@ export function createApp(readiness: Readiness, log: Logger) {
     next();
   });
   app.use(healthRouter(readiness, log));
+  if (whatsapp) app.use(whatsappRouter(whatsapp, log));
   app.use((_req, res) => {
     res
       .status(404)

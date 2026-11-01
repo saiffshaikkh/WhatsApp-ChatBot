@@ -3,19 +3,33 @@
 Each stage requires explicit authorization. Complete and verify only the current
 stage, report its result, and stop. The roadmap is not permission to continue.
 
-| Stage                                      | Scope                                                                                   | Exit evidence                                                                             |
-| ------------------------------------------ | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 0: Documentation, completed                | Rules, vision, architecture, ADRs and glossary                                          | Twelve files, valid links, policy coverage and consistency reviewed                       |
-| 1: Requirements, completed                 | Eight V1 PRDs, capability limits and acceptance criteria                                | Required sections, V1 coverage and contradiction review; documentation only               |
-| 2: Public website investigation, completed | Legitimate public sources, mechanisms, access limits and blockers; no implementation    | Dated evidence, capability matrix and ADR-004 update                                      |
-| 3: Backend foundation, completed           | Config, Express, Prisma/Neon, Upstash, lifecycle, health, logging, tests and containers | Tests, type check, lint, formatting and build pass; report live-service and Docker limits |
-| 4: Durable memory, completed               | Customer/conversation models, scoped persistence and temporary Upstash context          | Persistence, relationships, isolation, cache and failure tests; normal verification       |
-| 5: WhatsApp                                | Verified webhooks, durable processing, deduplication and replies                        | Signature, replay/duplicate, retry and relevant end-to-end checks pass                    |
-| 6: Production readiness                    | Privacy operations, monitoring, deployment, evaluations and runbooks                    | Agreed acceptance thresholds, recovery tests and operational review completed             |
+| Stage                                                    | Scope                                                                                                  | Exit evidence                                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 0: Documentation, completed                              | Rules, vision, architecture, ADRs and glossary                                                         | Twelve files, valid links, policy coverage and consistency reviewed                       |
+| 1: Requirements, completed                               | Eight V1 PRDs, capability limits and acceptance criteria                                               | Required sections, V1 coverage and contradiction review; documentation only               |
+| 2: Public website investigation, completed               | Legitimate public sources, mechanisms, access limits and blockers; no implementation                   | Dated evidence, capability matrix and ADR-004 update                                      |
+| 3: Backend foundation, completed                         | Config, Express, Prisma/Neon, Upstash, lifecycle, health, logging, tests and containers                | Tests, type check, lint, formatting and build pass; report live-service and Docker limits |
+| 4: Durable memory, completed                             | Customer/conversation models, scoped persistence and temporary Upstash context                         | Persistence, relationships, isolation, cache and failure tests; normal verification       |
+| 5: WhatsApp, implemented; live Meta verification pending | Verified webhooks, durable processing, deduplication and replies                                       | Signature, replay/duplicate, retry and relevant end-to-end checks pass                    |
+| 6: Ecommerce abstraction, completed                      | Read-only EcommerceProvider, normalized models and deterministic mock; no live adapter or order access | Product/URL/stock/provider tests and normal local verification                            |
+| Future: Production readiness, not authorized             | Privacy operations, monitoring, deployment, evaluations and runbooks                                   | Agreed acceptance thresholds, recovery tests and operational review                       |
 
 Dependencies can be refined through documented decisions before the relevant
 stage. For example, embedding selection must be resolved before RAG implementation.
 No stage may silently add access to CFS private systems.
+
+## Temporary Stage 5 dependency gate
+
+Stage 5 is paused at the owner's request. For every new explicit stage request,
+first state whether it depends on unfinished Stage 5 work. If independent, proceed
+within that request's authorized scope. If dependent, discuss limitations and agree
+the workable scope before implementation. A pending live WhatsApp gate alone does
+not block independent work, and no roadmap label authorizes a stage automatically.
+
+Follow the [temporary gate in AGENTS.md](../../AGENTS.md#temporary-stage-5-dependency-gate).
+Once Stage 5 is fully complete, remove this temporary section and the corresponding
+sections in AGENTS.md and README.md, while preserving accurate verification history.
+Credentials or mock tests alone do not establish completion.
 
 ## Open questions and decision gates
 
@@ -60,5 +74,18 @@ conditional; verified public contact guidance is the minimum handoff path.
 - No application features or live source verification are part of this stage.
 
 Stage 4 was explicitly re-scoped to durable customer memory by the project owner.
-AI orchestration, RAG and all messaging/ecommerce work remain future work requiring
+AI orchestration, RAG and live ecommerce integration remain future work requiring
 separate stage authorization. Roadmap labels do not grant implementation permission.
+
+Stage 5 WhatsApp transport is explicitly authorized as of 2026-11-01, with deterministic placeholder replies only. AI, product search, ecommerce, RAG, orders, cart and checkout are excluded. Live Meta verification remains pending credentials/setup. Stage 6 abstraction work is now separately authorized; no subsequent stage is authorized.
+
+Stage 5 verification on 2026-11-01: 47 local tests and 18 real-service tests passed, with mocked outbound WhatsApp. Typecheck, lint, format, Prisma validation/generation and build passed. Migration remains undeployed to the main database. Stage 5 is not fully verified until the live Meta gate passes.
+
+Stage 6 was explicitly re-scoped to EcommerceProvider abstraction by the owner on
+2026-11-01. It does not depend on unfinished Stage 5 activation. Only product read
+contracts, normalized models and mock behavior are authorized. Collection/live
+adapters remain conditional on Stage 2 blockers and separate authorization.
+Order access remains unavailable. Stage 5 stays paused and its temporary gate
+must not be removed until its own remaining work is complete.
+
+Stage 6 verification on 2026-11-01: 38 targeted ecommerce tests and all 85 local tests passed. Typecheck, lint, format, Prisma generation and build passed. No service interactions changed, so existing service integrations were not rerun. No live CFS provider is implemented. Stop after this stage.

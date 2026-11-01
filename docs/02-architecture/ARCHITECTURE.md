@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Stage 3 foundation and Stage 4 scoped memory infrastructure are implemented. AI, messaging, ecommerce and RAG components below remain planned. See README.md for setup and operational limits.
+Status: Stage 3 foundation, Stage 4 scoped memory and Stage 5 WhatsApp transport are implemented. Stage 5 local/service verification passed; live Meta checks are pending credentials/setup. Stage 6 adds internal ecommerce read contracts/models and a mock; live ecommerce, AI and RAG remain planned. See README.md for setup and operational limits.
 
 ## Folder structure
 
@@ -48,8 +48,7 @@ and externally supplied test credentials must be designed before integration tes
    WhatsApp adapter. Unsupported or conflicting facts cause an honest fallback.
 7. Persist only the required customer-scoped history and delivery/processing state.
 
-The durable processing mechanism, retries and recovery design remain to be
-selected in the foundation/messaging stages. Redis is not the sole durable record.
+Stage 5 uses PostgreSQL delivery records, atomic claims and conservative retry/recovery rules from ADR-006. Redis is not the sole durable record.
 
 ## Public evidence flow
 
@@ -115,3 +114,29 @@ Customer-scoped memory repositories/services use Prisma and Neon as durable trut
 Upstash contains bounded, expiring versioned recent context. No HTTP or AI tools
 are exposed by this module. See [ADR-003](ADR-003-MEMORY.md) for scope validation,
 composite ownership constraints, transaction behavior, cache fallback and limits.
+
+## Stage 5 WhatsApp boundary
+
+The WhatsApp feature keeps authentication, Zod schemas/normalization, conversation
+resolution, durable message acceptance, workflow, outgoing client and tests under
+src/features/whatsapp/. It reuses the scoped memory identity/message helpers.
+The server mounts routes and starts/drains the worker only when explicitly enabled.
+
+See [ADR-006](ADR-006-WHATSAPP-PROCESSING.md) and the [integration guide](../03-integrations/WHATSAPP-INTEGRATION.md) for durable states, bounded retries, uncertain sends and activation gates.
+Only deterministic replies exist. AI and business workflows remain unimplemented.
+
+## Stage 6 ecommerce boundary
+
+Application workflows must communicate through EcommerceProvider. AI must never
+access CFS directly, construct URLs or receive raw external responses. The internal
+src/features/ecommerce/ module contains the read-only interface, Zod normalizer,
+Product/ProductVariant/InventoryStatus models, deterministic mock and unit tests.
+No provider is mounted in Express, wired into WhatsApp or exposed as an AI tool.
+
+The normalizer accepts unknown candidate data plus application-owned source
+observations. It validates approved observed URLs without rewriting, strips raw
+fields and preserves separate identifiers, missing facts and variant-specific
+stock/offer evidence. Mock results are explicitly marked and cloned.
+No live adapter, ingestion, database change or private order capability exists.
+See [ADR-004](ADR-004-ECOMMERCE-INTEGRATION.md) and the
+[provider contract](../03-integrations/ECOMMERCE-PROVIDER.md). Stage 5 remains paused.

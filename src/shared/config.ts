@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { whatsappConfigSchema } from '../features/whatsapp/config.js';
 const neonUrl = z.url().refine((value) => {
   if (!URL.canParse(value)) return false;
   const url = new URL(value);
@@ -9,30 +10,48 @@ const neonUrl = z.url().refine((value) => {
     Boolean(url.username && url.password)
   );
 });
-const schema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
-  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  DATABASE_URL: neonUrl,
-  DATABASE_URL_UNPOOLED: neonUrl.refine(
-    (value) =>
-      !URL.canParse(value) || !new URL(value).hostname.includes('-pooler.'),
-  ),
-  UPSTASH_REDIS_REST_URL: z.url().refine((value) => {
-    if (!URL.canParse(value)) return false;
-    const u = new URL(value);
-    return (
-      u.protocol === 'https:' &&
-      u.hostname.endsWith('.upstash.io') &&
-      !u.username &&
-      !u.password &&
-      !u.search &&
-      u.pathname === '/'
-    );
-  }),
-  UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1),
-});
+const schema = z
+  .object({
+    NODE_ENV: z
+      .enum(['development', 'test', 'production'])
+      .default('development'),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+    DATABASE_URL: neonUrl,
+    DATABASE_URL_UNPOOLED: neonUrl.refine(
+      (value) =>
+        !URL.canParse(value) || !new URL(value).hostname.includes('-pooler.'),
+    ),
+    UPSTASH_REDIS_REST_URL: z.url().refine((value) => {
+      if (!URL.canParse(value)) return false;
+      const u = new URL(value);
+      return (
+        u.protocol === 'https:' &&
+        u.hostname.endsWith('.upstash.io') &&
+        !u.username &&
+        !u.password &&
+        !u.search &&
+        u.pathname === '/'
+      );
+    }),
+    UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1),
+  })
+  .extend(whatsappConfigSchema.partial().shape)
+  .extend({
+    WHATSAPP_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+  })
+  .superRefine((config, ctx) => {
+    if (
+      config.WHATSAPP_ENABLED &&
+      !whatsappConfigSchema.safeParse(config).success
+    )
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Invalid WhatsApp configuration',
+      });
+  });
 export function parseEnv(input: NodeJS.ProcessEnv) {
   const result = schema.safeParse(input);
   if (!result.success) throw new Error('Invalid environment configuration');

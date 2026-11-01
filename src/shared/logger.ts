@@ -8,6 +8,15 @@ type Event =
   | 'request_failed'
   | 'dependency_failed'
   | 'memory_cache_failed'
+  | 'whatsapp_rejected'
+  | 'whatsapp_accepted'
+  | 'whatsapp_duplicate'
+  | 'whatsapp_expired'
+  | 'whatsapp_retry'
+  | 'whatsapp_failed'
+  | 'whatsapp_uncertain'
+  | 'whatsapp_api_accepted'
+  | 'whatsapp_processing_failed'
   | 'fatal';
 type Fields = { requestId?: string; status?: number; durationMs?: number };
 export function createLogger(

@@ -12,19 +12,31 @@ Stage 0 established engineering rules, product scope, architecture, ADRs, and a
 gated roadmap. Stage 1 defines eight V1 PRDs. Neither stage implements features or inspects live CFS
 resources. See [the roadmap](ROADMAP.md) for later work.
 
+Stage 3 backend foundation and Stage 4 customer-scoped memory are complete.
+Stage 5 now implements signed WhatsApp webhooks, durable message/reply processing
+and a bounded outgoing client with deterministic replies. Local/service verification
+passed; live Meta checks remain pending credentials/setup. No AI, product search,
+ecommerce, RAG, orders, cart or checkout is implemented by Stage 5. Stop here.
+See the [integration guide](../03-integrations/WHATSAPP-INTEGRATION.md).
+
+Stage 6 completed an internal EcommerceProvider abstraction with normalized
+product/variant/availability models and a deterministic mock. It is independent
+of unfinished Stage 5 work. No live catalogue adapter, AI or order access is added.
+See the [provider contract](../03-integrations/ECOMMERCE-PROVIDER.md).
+
 ## Access and capability status
 
-| Resource or capability | Current status |
-| --- | --- |
-| Public CFS website and publicly accessible resources | Permitted scope; exact sources and suitability not yet investigated |
-| Explicit public/authorized integrations | None provided or verified |
-| PHP source, CFS database, private APIs, admin panel, internal tools/services | Unavailable |
-| Product search and public policy answers | Planned, conditional on verified public sources |
-| Current prices, stock, specifications and product URLs | Unverified; must not be generated |
-| Customer order lookup, amendments, cancellation and returns execution | Unavailable without an authorized integration and customer authorization |
-| Purchases and order creation | Unavailable; real orders prohibited during investigation |
-| Delivery promises and private order status | Unavailable with current access |
-| Human support handoff | Desired fallback; channel and ownership unverified |
+| Resource or capability                                                       | Current status                                                                |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Public CFS website and publicly accessible resources                         | Stage 2 sample investigated; live collection/reuse and freshness gates remain |
+| Explicit public/authorized integrations                                      | None provided or verified                                                     |
+| PHP source, CFS database, private APIs, admin panel, internal tools/services | Unavailable                                                                   |
+| Product search and public policy answers                                     | Planned, conditional on verified public sources                               |
+| Current prices, stock, specifications and product URLs                       | Unverified; must not be generated                                             |
+| Customer order lookup, amendments, cancellation and returns execution        | Unavailable without an authorized integration and customer authorization      |
+| Purchases and order creation                                                 | Unavailable; real orders prohibited during investigation                      |
+| Delivery promises and private order status                                   | Unavailable with current access                                               |
+| Human support handoff                                                        | Desired fallback; channel and ownership unverified                            |
 
 ## Operating boundaries
 

@@ -30,3 +30,30 @@ describe('environment validation', () => {
     );
   });
 });
+
+it('requires complete WhatsApp config when enabled and rejects invalid credentials safely', () => {
+  expect(parseEnv(valid).WHATSAPP_ENABLED).toBe(false);
+  expect(() => parseEnv({ ...valid, WHATSAPP_ENABLED: 'true' })).toThrow(
+    /^Invalid environment configuration$/,
+  );
+  const whatsapp = {
+    WHATSAPP_ENABLED: 'true',
+    WHATSAPP_ACCESS_TOKEN: 'synthetic-access-token',
+    WHATSAPP_VERIFY_TOKEN: 'synthetic-verify-token',
+    WHATSAPP_APP_SECRET: 'synthetic-app-secret',
+    WHATSAPP_PHONE_NUMBER_ID: '100000000001',
+    WHATSAPP_API_VERSION: 'v25.0',
+  };
+  expect(parseEnv({ ...valid, ...whatsapp }).WHATSAPP_ENABLED).toBe(true);
+  for (const override of [
+    { WHATSAPP_API_VERSION: 'v25.0/../evil' },
+    { WHATSAPP_PHONE_NUMBER_ID: 'not-a-number' },
+    { WHATSAPP_APP_SECRET: '' },
+    { WHATSAPP_ACCESS_TOKEN: '' },
+    { WHATSAPP_ENABLED: 'yes' },
+  ]) {
+    expect(() => parseEnv({ ...valid, ...whatsapp, ...override })).toThrow(
+      /^Invalid environment configuration$/,
+    );
+  }
+});

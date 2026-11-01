@@ -3,7 +3,7 @@
 Documentation foundation for an AI-powered WhatsApp furniture shopping and
 customer-support assistant for Choice Furniture Superstore (CFS), a UK retailer.
 
-**Status: Stage 4 memory infrastructure complete.** No business features or external services are provisioned.
+**Status: Stage 6 ecommerce abstraction complete.** Internal models and mocks only. Stage 5 remains paused pending activation and live Meta verification.
 
 ## Read first
 
@@ -21,6 +21,7 @@ customer-support assistant for Choice Furniture Superstore (CFS), a UK retailer.
 - [ADR-003: Memory](docs/02-architecture/ADR-003-MEMORY.md)
 - [ADR-004: Ecommerce integration](docs/02-architecture/ADR-004-ECOMMERCE-INTEGRATION.md)
 - [ADR-005: AI provider abstraction](docs/02-architecture/ADR-005-AI-PROVIDER-ABSTRACTION.md)
+- [ADR-006: Durable WhatsApp processing](docs/02-architecture/ADR-006-WHATSAPP-PROCESSING.md)
 
 ## Access boundary
 
@@ -38,7 +39,7 @@ MockAIProvider for automated tests through AIProvider. Codex is the coding agent
 
 ## Eventual environment variables
 
-These are planned names, not usable configuration. No credentials are included.
+Foundation and WhatsApp variable names are implemented; AI variables remain planned. No credentials are included.
 
 | Variable                   | Purpose                                                   |
 | -------------------------- | --------------------------------------------------------- |
@@ -54,7 +55,7 @@ These are planned names, not usable configuration. No credentials are included.
 | `WHATSAPP_PHONE_NUMBER_ID` | Authorized WhatsApp sender identifier                     |
 
 This list is not exhaustive. Webhook signature verification will also require a
-Meta app secret; finalize its configuration name during the messaging stage.
+Meta app secret (`WHATSAPP_APP_SECRET`), an explicit `WHATSAPP_API_VERSION` and `WHATSAPP_ENABLED=true` to activate the transport.
 The webhook verify token does not authenticate incoming message payloads.
 
 ## Verification and next work
@@ -62,7 +63,17 @@ The webhook verify token does not authenticate incoming message payloads.
 Documentation validation covers paths, links, policy coverage, consistency,
 and basic Markdown formatting. Runtime scripts and tests now cover the backend foundation.
 Follow the permanent verification policy in AGENTS.md for all code changes.
-Later stages require explicit authorization; stop after Stage 4.
+Stage 6 ecommerce abstraction is explicitly authorized and independent of unfinished Stage 5 work. Stop after Stage 6; no later stage is authorized.
+
+## Temporary Stage 5 dependency gate
+
+Stage 5 is paused. Before starting each newly requested stage, report whether it
+depends on unfinished Stage 5 work. Start independent, explicitly authorized work;
+discuss limitations and resolve the scope first when a dependency exists.
+See the [temporary gate in AGENTS.md](AGENTS.md#temporary-stage-5-dependency-gate).
+Remove this temporary section and its AGENTS.md/roadmap counterparts when Stage 5
+is fully complete, including required migration, setup and successful live checks.
+No new implementation stage is authorized by this documentation change.
 
 ## V1 requirements
 
@@ -98,8 +109,8 @@ npm run dev
 Both database URLs must use a Neon host, credentials and `sslmode=verify-full`.
 Use the pooled URL for DATABASE_URL and a direct host without `-pooler` for
 DATABASE_URL_UNPOOLED. Upstash requires an HTTPS \*.upstash.io REST URL and token.
-PORT defaults to 3000. Only foundation variables are required now; AI and WhatsApp
-credentials are future configuration and are not read in this stage.
+PORT defaults to 3000. Foundation variables are required; AI is not implemented and WhatsApp
+credentials are required only when WHATSAPP_ENABLED=true. See the Stage 5 integration guide.
 
 Prisma 7 uses prisma.config.ts for the direct CLI datasource and PrismaPg for the
 runtime pooled connection. Generation and builds do not connect to the database.
@@ -160,8 +171,7 @@ No later-stage feature is implemented or authorized by this verification record.
 ## Stage 4 memory infrastructure
 
 Five Prisma models cover customers, their conversations/messages/summaries and
-consented preferences. Internal code is under src/features/memory/. No memory
-HTTP endpoint, AI generation or WhatsApp transport is implemented.
+consented preferences. Internal code is under src/features/memory/. No public memory HTTP endpoint or AI generation is implemented. Stage 5 adds the WhatsApp transport described below.
 
 ```powershell
 npm run prisma:generate
@@ -204,3 +214,56 @@ Save-message transaction acquisition and execution are bounded to five seconds.
 This aligns acquisition with the existing connection timeout. The Stage 3 /ready
 contract still requires both Neon and Upstash; memory-service Redis fallback does
 not change that readiness policy. No real customer histories were ingested.
+
+## Stage 5 WhatsApp integration
+
+See [WhatsApp setup, flow, recovery and limits](docs/03-integrations/WHATSAPP-INTEGRATION.md) and [ADR-006](docs/02-architecture/ADR-006-WHATSAPP-PROCESSING.md).
+
+The transport is disabled by default. Apply the additive migration and configure
+all WhatsApp variables before enabling. Signed webhooks persist scoped messages
+and pending deterministic replies; a worker sends with bounded timeouts and retries.
+Live Meta send/receive verification requires credentials and setup, currently unavailable.
+No AI, search, ecommerce, RAG, order, cart or checkout feature was added.
+
+### Stage 5 verification
+
+On 2026-11-01, 47 local tests and 18 live Neon/Upstash integration tests passed.
+TypeScript, ESLint, Prettier, Prisma generation/schema validation and build passed.
+The WhatsApp tests used a mock outgoing client, including the signed HTTP workflow
+with real isolated PostgreSQL persistence. No test was disabled or assertion removed.
+Earlier type/lint/format failures were corrected and rechecked. Compiled startup with live Neon/Upstash returned /health=200, /ready=200 and disabled /webhooks/whatsapp=404.
+
+The additive Stage 5 migration was verified only in isolated synthetic schemas,
+which were cleaned up. It is not deployed to the main database. Live Meta
+send/receive, subscription setup and current-contract confirmation remain pending
+credentials/setup; official webhook documentation retrieval was rate-limited.
+Docker daemon checks remain deferred. Stage 5 remains paused; Stage 6 is separately authorized for abstraction/models/mocks only.
+
+## Stage 6 ecommerce abstraction
+
+See the [EcommerceProvider contract, source trust and limits](docs/03-integrations/ECOMMERCE-PROVIDER.md).
+The internal EcommerceProvider exposes searchProducts, getProduct and checkStock.
+MockEcommerceProvider accepts explicit validated records and never contacts CFS.
+Products preserve observed URLs, distinct identifiers, per-variant facts and stock
+wording/time; unknown facts remain missing. Mock data is explicitly marked.
+
+No live CFS adapter, restricted search endpoint, private order access, AI tool,
+cart or checkout was added. No database/config/WhatsApp change was needed for Stage 6.
+Stage 5 remains paused and its temporary dependency gate remains active.
+
+On 2026-11-01, 38 ecommerce tests and the full 85-test local suite passed. Typecheck,
+ESLint, formatting, Prisma generation and production build passed. Early URL and
+optional-property validation failures were fixed and rechecked. Documentation links
+and Stage 5 gate preservation were checked. No live ecommerce integration is claimed.
+Existing Neon/Upstash/WhatsApp service tests were not rerun for this pure module;
+their earlier results remain dated Stage 5 evidence. No dependencies were added.
+Stop here; no subsequent stage is authorized.
+
+## Future CFS MySQL access handoff
+
+The owner reports CFS uses MySQL. No hosting details, credentials or schema have
+been verified, and no connection or live adapter is implemented. The intended
+future source remains behind EcommerceProvider, with Neon retained for application
+state. See the [saved access request and resume sequence](docs/03-integrations/CFS-MYSQL-ACCESS-HANDOFF.md).
+This is a documented proposal, not authorization for a new implementation stage
+or an exception to the fixed stack. Stage 5 remains paused.
