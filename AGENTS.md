@@ -234,6 +234,18 @@ were checked; no runtime/database checks or code changes were performed.
 
 ### Next permitted work
 
+Maintenance verification on 2026-11-01: a parallel service run passed 16/18 tests,
+with a query-read timeout and a transaction-acquisition timeout. The same suites
+passed 18/18 with sequential files. Integration configuration now sets
+fileParallelism=false; the default npm run test:integration passed 18/18 in 186s.
+Concurrent delivery/claim tests, runtime timeouts and per-test budgets remain
+unchanged. All 85 local tests, typecheck, lint, formatting, Prisma validation and
+generation/build passed after the change. See README.md for the investigation.
+Separate suite pools share remote services; sequential scheduling removes their
+overlap, but the exact Neon/network latency cause and production behavior remain
+unproven. Normal sandbox networking remains blocked; approved commands worked.
+No migration or Stage 5 activation occurred. Docker daemon checks remain deferred.
+
 Stage 6 is complete. Wait for the next explicit stage instruction and apply the temporary Stage 5 dependency gate before implementation. Stage 5 remains paused; its activation needs the authorized migration target, Meta credentials/setup and live verification. No subsequent stage is authorized. Real customer use still requires agreed privacy/retention
 and identity lifecycle policies. Docker daemon checks remain explicitly deferred.
 

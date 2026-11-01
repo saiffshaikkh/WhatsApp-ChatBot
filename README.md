@@ -129,8 +129,29 @@ node --env-file=.env node_modules/vitest/vitest.mjs run --config vitest.integrat
 ```
 
 The default test suite includes local HTTP integration tests with controlled
-readiness dependencies; it needs no external credentials. test:integration performs
-only SELECT 1 and PING on the configured services and never skips missing credentials.
+readiness dependencies; it needs no external credentials. test:integration runs
+read-only SELECT 1/PING probes plus synthetic persistence/isolation suites in
+generated test schemas and scoped Redis keys. It never skips missing credentials.
+Integration files run sequentially because their separate Prisma pools share the
+same remote services. Tests inside a suite still exercise concurrent deliveries
+and claims. Local tests remain parallel; runtime and test timeout limits are unchanged.
+
+### Integration timeout investigation, 2026-11-01
+
+The parallel service run passed 16/18 tests; one query exceeded its read timeout
+and one transaction could not start within its acquisition budget. Running the same
+suites sequentially passed 18/18. Setting `fileParallelism: false` in
+vitest.integration.config.ts made the default command sequential; its verification
+also passed 18/18 in 186 seconds, including concurrent delivery/claim assertions.
+This removes overlapping suite pools as a source of test load. It does not prove
+the exact Neon/network cause or guarantee production latency. Runtime budgets,
+assertions, retries and per-test timeouts were not increased or relaxed.
+
+After the configuration change, all 85 local tests, typecheck, lint, formatting,
+Prisma validation/generation and production build passed. Approved network access
+was required for service tests; the normal sandbox remained blocked. The preceding
+approved npm audit reported zero vulnerabilities; dependencies did not change.
+No main-database migration, live Meta verification or Docker daemon check ran.
 
 GET /health reports process liveness. GET /ready returns 200 only when dependency
 probes pass and shutdown is not underway, otherwise 503 without service details.
